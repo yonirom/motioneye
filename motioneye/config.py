@@ -16,15 +16,15 @@
 
 import collections
 import datetime
-import errno
 import glob
 import hashlib
 import logging
 import os.path
-import re
-import shlex
 import subprocess
-import urllib.parse
+from errno import EEXIST, ENOENT
+from re import match, sub
+from shlex import split
+from urllib.parse import urlunparse
 
 from tornado.ioloop import IOLoop
 
@@ -150,7 +150,7 @@ def webcontrol_interface(v, data):
     return {'webcontrol_html_output': bool(v)}
 
 
-_MOTION_PRE_TO_POST_42_OPTIONS_MAPPING = {
+_MOTION_41_TO_43_OPTIONS_MAPPING = {
     'ffmpeg_video_codec': 'movie_codec',
     'ffmpeg_output_movies': 'movie_output',
     'ffmpeg_output_debug_movies': 'movie_output_motion',
@@ -165,7 +165,8 @@ _MOTION_PRE_TO_POST_42_OPTIONS_MAPPING = {
     'webcontrol_html_output': webcontrol_html_output,
 }
 
-_MOTION_POST_TO_PRE_42_OPTIONS_MAPPING = {
+
+_MOTION_43_TO_41_OPTIONS_MAPPING = {
     'movie_codec': 'ffmpeg_video_codec',
     'movie_output': 'ffmpeg_output_movies',
     'movie_output_motion': 'ffmpeg_output_debug_movies',
@@ -179,6 +180,54 @@ _MOTION_POST_TO_PRE_42_OPTIONS_MAPPING = {
     'text_scale': text_scale,
     'webcontrol_interface': webcontrol_interface,
     'webcontrol_parms': None,
+}
+
+
+def netcam_keepalive_params(v, data):
+    return {'netcam_params': v}
+
+
+def netcam_tolerant_check_params(v, data):
+    return {'netcam_params': v}
+
+
+def netcam_url_params(v, data):
+    return {'netcam_params': v}
+
+
+def netcam_use_tcp_params(v, data):
+    return {'netcam_params': v}
+
+
+def netcam_usepass_params(v, data):
+    return {'netcam_params': v}
+
+
+def netcam_params(v, data):
+    return {
+        'netcam_keepalive': v,
+        'netcam_tolerant_check': v,
+        'netcam_url': v,
+        'netcam_use_tcp': v,
+        'netcam_userpass': v,
+    }
+
+
+_MOTION_43_TO_44_OPTIONS_MAPPING = {
+    'netcam_keepalive': netcam_keepalive_params,
+    'netcam_tolerant_check': netcam_tolerant_check_params,
+    'netcam_url': netcam_url_params,
+    'netcam_use_tcp': netcam_use_tcp_params,
+    'netcam_userpass': netcam_usepass_params,
+    'vid_control_params': 'video_params',
+    'videodevice': 'video_device',
+}
+
+
+_MOTION_44_TO_43_OPTIONS_MAPPING = {
+    'netcam_params': netcam_params,
+    'video_params': 'vid_control_params',
+    'video_device': 'videodevice',
 }
 
 
@@ -220,7 +269,7 @@ def get_main(as_lines=False):
         f = open(config_file_path)
 
     except OSError as e:
-        if e.errno == errno.ENOENT:  # file does not exist
+        if e.errno == ENOENT:  # file does not exist
             logging.info(
                 f'main config file {config_file_path} does not exist, using default values'
             )
@@ -268,7 +317,7 @@ def get_main(as_lines=False):
     )
 
     # adapt directives from pre-4.2 configuration
-    adapt_config_directives(main_config, _MOTION_PRE_TO_POST_42_OPTIONS_MAPPING)
+    adapt_config_directives(main_config, _MOTION_41_TO_43_OPTIONS_MAPPING)
 
     _get_additional_config(main_config)
     _set_default_motion(main_config)
@@ -289,9 +338,12 @@ def set_main(main_config):
     main_config = dict(main_config)
     _set_additional_config(main_config)
 
-    # adapt directives to pre-4.2 configuration, if needed
+    # adapt directives for motion versions < 4.2 and > 4.3
     if motionctl.is_motion_pre42():
-        adapt_config_directives(main_config, _MOTION_POST_TO_PRE_42_OPTIONS_MAPPING)
+        adapt_config_directives(main_config, _MOTION_43_TO_41_OPTIONS_MAPPING)
+
+    elif motionctl.is_motion_post43():
+        adapt_config_directives(main_config, _MOTION_43_TO_44_OPTIONS_MAPPING)
 
     config_file_path = os.path.join(settings.CONF_PATH, _MAIN_CONFIG_FILE_NAME)
 
@@ -345,10 +397,7 @@ def get_camera_ids(filter_valid=True):
         ls = os.listdir(config_path)
 
     except Exception as e:
-        logging.error(
-            'failed to list config dir %(path)s: %(msg)s',
-            {'path': config_path, 'msg': str(e)},
-        )
+        logging.error(f'failed to list config dir {config_path}: {e}')
 
         raise
 
@@ -356,9 +405,9 @@ def get_camera_ids(filter_valid=True):
 
     pattern = '^' + _CAMERA_CONFIG_FILE_NAME.replace('%(id)s', r'(\d+)') + '$'
     for name in ls:
-        match = re.match(pattern, name)
-        if match:
-            camera_id = int(match.groups()[0])
+        _match = match(pattern, name)
+        if _match:
+            camera_id = int(_match.groups()[0])
             logging.debug(f'found camera with id {camera_id}')
 
             camera_ids.append(camera_id)
@@ -477,8 +526,9 @@ def get_camera(camera_id, as_lines=False):
         )
         camera_config['@id'] = camera_id
 
-        # adapt directives from pre-4.2 configuration
-        adapt_config_directives(camera_config, _MOTION_PRE_TO_POST_42_OPTIONS_MAPPING)
+        # adapt directives for motion versions < 4.2 and > 4.3
+        adapt_config_directives(camera_config, _MOTION_41_TO_43_OPTIONS_MAPPING)
+        adapt_config_directives(camera_config, _MOTION_44_TO_43_OPTIONS_MAPPING)
 
         _get_additional_config(camera_config, camera_id=camera_id)
 
@@ -494,7 +544,7 @@ def get_camera(camera_id, as_lines=False):
 
     else:  # incomplete configuration
         logging.warning(
-            'camera config file at %s is incomplete, ignoring' % camera_config_path
+            f'camera config file at {camera_config_path} is incomplete, ignoring'
         )
 
         return None
@@ -511,11 +561,12 @@ def set_camera(camera_id, camera_config):
     camera_config = dict(camera_config)
 
     if utils.is_local_motion_camera(camera_config):
-        # adapt directives to pre-4.2 configuration, if needed
+        # adapt directives for motion versions < 4.2 and > 4.3
         if motionctl.is_motion_pre42():
-            adapt_config_directives(
-                camera_config, _MOTION_POST_TO_PRE_42_OPTIONS_MAPPING
-            )
+            adapt_config_directives(camera_config, _MOTION_43_TO_41_OPTIONS_MAPPING)
+
+        elif motionctl.is_motion_post43():
+            adapt_config_directives(camera_config, _MOTION_43_TO_44_OPTIONS_MAPPING)
 
         # set the enabled status in main config
         main_config = get_main()
@@ -593,7 +644,7 @@ def add_camera(device_details):
         if device_details['port']:
             host += ':' + str(device_details['port'])
 
-        device_details['url'] = urllib.parse.urlunparse(
+        device_details['url'] = urlunparse(
             (device_details['scheme'], host, device_details['path'], '', '', '')
         )
 
@@ -647,7 +698,7 @@ def add_camera(device_details):
         if device_details.get('camera_index') == 'udp':
             camera_config['netcam_use_tcp'] = False
 
-        if re.match(r'^rtsp|^rtmp', camera_config['netcam_url']):
+        if match(r'^rtsp|^rtmp', camera_config['netcam_url']):
             camera_config['width'] = 640
             camera_config['height'] = 480
 
@@ -708,11 +759,7 @@ def rem_camera(camera_id):
         os.remove(camera_config_path)
 
     except Exception as e:
-        logging.error(
-            'could not remove camera config file {path}: {msg}'.format(
-                path=camera_config_path, msg=str(e)
-            )
-        )
+        logging.error(f'could not remove camera config file {camera_config_path}: {e}')
 
         raise
 
@@ -734,7 +781,7 @@ def main_ui_to_dict(ui):
                 logging.debug('password hook exec succeeded')
 
             except Exception as e:
-                logging.error('password hook exec failed: %s' % e)
+                logging.error(f'password hook exec failed: {e}')
 
     if ui.get('admin_password') is not None:
         if ui['admin_password']:
@@ -931,7 +978,7 @@ def motion_camera_ui_to_dict(ui, prev_config=None):
             data['vid_control_params'] = ','.join(vid_control_params)
 
     else:  # assuming netcam
-        if re.match(
+        if match(
             r'^rtsp|^rtmp', data.get('netcam_url', prev_config.get('netcam_url', ''))
         ):
             # motion uses the configured width and height for RTSP/RTMP cameras
@@ -995,14 +1042,12 @@ def motion_camera_ui_to_dict(ui, prev_config=None):
         )
 
     except OSError as e:
-        if isinstance(e, OSError) and e.errno == errno.EEXIST:
+        if isinstance(e, OSError) and e.errno == EEXIST:
             pass  # already exists, things should be just fine
 
         else:
             logging.error(
-                'failed to create root directory "{}": {}'.format(
-                    data['target_dir'], e
-                ),
+                f'failed to create root directory "{data["target_dir"]}": {e}',
                 exc_info=True,
             )
 
@@ -1014,7 +1059,7 @@ def motion_camera_ui_to_dict(ui, prev_config=None):
         tasks.add(
             0,
             uploadservices.update,
-            tag='uploadservices.update(%s)' % ui['upload_service'],
+            tag=f"uploadservices.update({ui['upload_service']})",
             camera_id=prev_config['@id'],
             service_name=ui['upload_service'],
             settings=upload_settings,
@@ -1143,11 +1188,9 @@ def motion_camera_ui_to_dict(ui, prev_config=None):
         data['@working_schedule_type'] = ui['working_schedule_type']
 
     # event start
-    on_event_start = [
-        '%(script)s start %%t' % {'script': meyectl.find_command('relayevent')}
-    ]
+    on_event_start = [f"{meyectl.find_command('relayevent')} start %%t"]
     if ui['email_notifications_enabled']:
-        emails = re.sub('\\s', '', ui['email_notifications_addresses'])
+        emails = sub('\\s', '', ui['email_notifications_addresses'])
 
         line = (
             "%(script)s '%(server)s' '%(port)s' '%(account)s' '%(password)s' '%(tls)s' '%(from)s' '%(to)s' "
@@ -1182,7 +1225,7 @@ def motion_camera_ui_to_dict(ui, prev_config=None):
         on_event_start.append(line)
 
     if ui['web_hook_notifications_enabled']:
-        url = re.sub('\\s', '+', ui['web_hook_notifications_url'])
+        url = sub('\\s', '+', ui['web_hook_notifications_url'])
 
         on_event_start.append(
             "{script} '{method}' '{url}'".format(
@@ -1198,12 +1241,10 @@ def motion_camera_ui_to_dict(ui, prev_config=None):
     data['on_event_start'] = '; '.join(on_event_start)
 
     # event end
-    on_event_end = [
-        '%(script)s stop %%t' % {'script': meyectl.find_command('relayevent')}
-    ]
+    on_event_end = [f"{meyectl.find_command('relayevent')} stop %%t"]
 
     if ui['web_hook_end_notifications_enabled']:
-        url = re.sub(r'\s', '+', ui['web_hook_end_notifications_url'])
+        url = sub(r'\s', '+', ui['web_hook_end_notifications_url'])
 
         on_event_end.append(
             "%(script)s '%(method)s' '%(url)s'"
@@ -1220,12 +1261,10 @@ def motion_camera_ui_to_dict(ui, prev_config=None):
     data['on_event_end'] = '; '.join(on_event_end)
 
     # movie end
-    on_movie_end = [
-        '%(script)s movie_end %%t %%f' % {'script': meyectl.find_command('relayevent')}
-    ]
+    on_movie_end = [f"{meyectl.find_command('relayevent')} movie_end %%t %%f"]
 
     if ui['web_hook_storage_enabled']:
-        url = re.sub('\\s', '+', ui['web_hook_storage_url'])
+        url = sub('\\s', '+', ui['web_hook_storage_url'])
 
         on_movie_end.append(
             "{script} '{method}' '{url}'".format(
@@ -1241,13 +1280,10 @@ def motion_camera_ui_to_dict(ui, prev_config=None):
     data['on_movie_end'] = '; '.join(on_movie_end)
 
     # picture save
-    on_picture_save = [
-        '%(script)s picture_save %%t %%f'
-        % {'script': meyectl.find_command('relayevent')}
-    ]
+    on_picture_save = [f"{meyectl.find_command('relayevent')} picture_save %%t %%f"]
 
     if ui['web_hook_storage_enabled']:
-        url = re.sub('\\s', '+', ui['web_hook_storage_url'])
+        url = sub('\\s', '+', ui['web_hook_storage_url'])
 
         on_picture_save.append(
             "{script} '{method}' '{url}'".format(
@@ -1407,7 +1443,7 @@ def motion_camera_dict_to_ui(data):
         ui['proto'] = 'netcam'
 
         # resolutions
-        if re.match(r'^rtsp|^rtmp', data['netcam_url']):
+        if match(r'^rtsp|^rtmp', data['netcam_url']):
             # motion uses the configured width and height for RTSP/RTMP cameras
             resolutions = utils.COMMON_RESOLUTIONS
             resolutions = [r for r in resolutions if motionctl.resolution_is_valid(*r)]
@@ -1505,8 +1541,7 @@ def motion_camera_dict_to_ui(data):
 
         else:  # not found for some reason
             logging.error(
-                'could not find mounted partition for device "%s" and target dir "%s"'
-                % (target_dev, data['target_dir'])
+                f'could not find mounted partition for device "{target_dev}" and target dir "{data["target_dir"]}"'
             )
 
             ui['root_directory'] = data['target_dir']
@@ -1652,7 +1687,7 @@ def motion_camera_dict_to_ui(data):
     command_notifications = []
     for e in on_event_start:
         if ' sendmail ' in e:
-            e = shlex.split(e)
+            e = split(e)
 
             if len(e) < 10:
                 continue
@@ -1678,7 +1713,7 @@ def motion_camera_dict_to_ui(data):
                 ui['email_notifications_picture_time_span'] = 0
 
         elif ' sendtelegram ' in e:
-            e = shlex.split(e)
+            e = split(e)
 
             if len(e) < 6:
                 continue
@@ -1693,7 +1728,7 @@ def motion_camera_dict_to_ui(data):
                 ui['telegram_notifications_picture_time_span'] = 0
 
         elif ' webhook ' in e:
-            e = shlex.split(e)
+            e = split(e)
 
             if len(e) < 3:
                 continue
@@ -1720,7 +1755,7 @@ def motion_camera_dict_to_ui(data):
     command_end_notifications = []
     for e in on_event_end:
         if ' webhook ' in e:
-            e = shlex.split(e)
+            e = split(e)
 
             if len(e) < 3:
                 continue
@@ -1747,7 +1782,7 @@ def motion_camera_dict_to_ui(data):
     command_storage = []
     for e in on_movie_end:
         if ' webhook ' in e:
-            e = shlex.split(e)
+            e = split(e)
 
             if len(e) < 3:
                 continue
@@ -1858,7 +1893,7 @@ def get_action_commands(camera_config):
 
 def get_monitor_command(camera_id):
     if camera_id not in _monitor_command_cache:
-        path = os.path.join(settings.CONF_PATH, 'monitor_%s' % camera_id)
+        path = os.path.join(settings.CONF_PATH, f'monitor_{camera_id}')
         if os.access(path, os.X_OK):
             _monitor_command_cache[camera_id] = path
 
@@ -1877,8 +1912,7 @@ def backup():
 
     if len(os.listdir(settings.CONF_PATH)) > 100:
         logging.debug(
-            'config path "%s" appears to be a system-wide config directory, performing a selective backup'
-            % settings.CONF_PATH
+            f'config path "{settings.CONF_PATH}" appears to be a system-wide config directory, performing a selective backup'
         )
 
         cmd = ['tar', 'zc', 'motion.conf']
@@ -1890,31 +1924,30 @@ def backup():
         )
         try:
             content = utils.call_subprocess(cmd, cwd=settings.CONF_PATH, encoding=None)
-            logging.debug('backup file created (%s bytes)' % len(content))
+            logging.debug(f'backup file created ({len(content)} bytes)')
 
             return content
 
         except Exception as e:
-            logging.error('backup failed: %s' % e, exc_info=True)
+            logging.error(f'backup failed: {e}', exc_info=True)
 
             return None
 
     else:
         logging.debug(
-            'config path "%s" appears to be a motion-specific config directory, performing a full backup'
-            % settings.CONF_PATH
+            f'config path "{settings.CONF_PATH}" appears to be a motion-specific config directory, performing a full backup'
         )
 
         try:
             content = utils.call_subprocess(
                 ['tar', 'zc', '.'], cwd=settings.CONF_PATH, encoding=None
             )
-            logging.debug('backup file created (%s bytes)' % len(content))
+            logging.debug(f'backup file created ({len(content)} bytes)')
 
             return content
 
         except Exception as e:
-            logging.error('backup failed: %s' % e, exc_info=True)
+            logging.error(f'backup failed: {e}', exc_info=True)
 
             return None
 
@@ -1935,7 +1968,7 @@ def restore(content):
         )
         msg = p.communicate(content)[0]
         if msg:
-            logging.error('failed to restore configuration: %s' % msg)
+            logging.error(f'failed to restore configuration: {msg}')
             return False
 
         logging.debug('configuration restored successfully')
@@ -1954,7 +1987,7 @@ def restore(content):
         return {'reboot': settings.ENABLE_REBOOT}
 
     except Exception as e:
-        logging.error('failed to restore configuration: %s' % e, exc_info=True)
+        logging.error(f'failed to restore configuration: {e}', exc_info=True)
 
         return None
 
@@ -2019,9 +2052,9 @@ def _conf_to_dict(lines, list_names=None, no_convert=None):
         if len(line) == 0:  # empty line
             continue
 
-        match = re.match(r'^#\s*(@\w+)\s*(.*)', line)
-        if match:
-            name, value = match.groups()[:2]
+        _match = match(r'^#\s*(@\w+)\s*(.*)', line)
+        if _match:
+            name, value = _match.groups()[:2]
 
         elif line.startswith('#') or line.startswith(';'):  # comment line
             continue
@@ -2063,9 +2096,9 @@ def _dict_to_conf(lines, data, list_names=None):
             conf_lines.append(line)
             continue
 
-        match = re.match(r'^#\s*(@\w+)\s*(.*)', line)
-        if match:  # @line
-            (name, value) = match.groups()[:2]
+        _match = match(r'^#\s*(@\w+)\s*(.*)', line)
+        if _match:  # @line
+            (name, value) = _match.groups()[:2]
 
         elif line.startswith('#') or line.startswith(';'):  # simple comment line
             conf_lines.append(line)
@@ -2308,7 +2341,7 @@ def get_additional_structure(camera, separators=False):
             result['name'] = func.__name__
             sections[func.__name__] = result
 
-            logging.debug('additional config section: %s' % result['name'])
+            logging.debug(f"additional config section: {result['name']}")
 
         configs = collections.OrderedDict()
         for func in _additional_config_funcs:
@@ -2331,7 +2364,7 @@ def get_additional_structure(camera, separators=False):
             section = sections.setdefault(result.get('section'), {})
             section.setdefault('configs', []).append(result)
 
-            logging.debug('additional config item: %s' % result['name'])
+            logging.debug(f"additional config item: {result['name']}")
 
         _additional_structure_cache[(camera, separators)] = sections, configs
 
