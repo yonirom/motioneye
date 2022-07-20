@@ -1195,8 +1195,8 @@ def motion_camera_ui_to_dict(ui, prev_config=None):
     if ui['command_notifications_enabled']:
         on_event_start += utils.split_semicolon(ui['command_notifications_exec'])
 
-    if ui['mqtt_notifications_enabled']:
-        on_event_start += [f"/usr/bin/mosquitto_pub -m ON {ui['mqtt_notifications_exec']}"]
+    if ui['mqtt_notifications_enabled'] and ui['mqtt_notifications_exec']:
+        on_event_start += [f"/usr/bin/mosquitto_pub -m ON -L {ui['mqtt_notifications_exec']}"]
 
     data['on_event_start'] = '; '.join(on_event_start)
 
@@ -1220,8 +1220,8 @@ def motion_camera_ui_to_dict(ui, prev_config=None):
     if ui['command_end_notifications_enabled']:
         on_event_end += utils.split_semicolon(ui['command_end_notifications_exec'])
 
-    if ui['mqtt_notifications_enabled']:
-        on_event_start += [f"/usr/bin/mosquitto_pub -m OFF {ui['mqtt_notifications_exec']}"]
+    if ui['mqtt_notifications_enabled'] and ui['mqtt_notifications_exec']:
+        on_event_start += [f"/usr/bin/mosquitto_pub -m OFF -L {ui['mqtt_notifications_exec']}"]
 
 
     data['on_event_end'] = '; '.join(on_event_end)
