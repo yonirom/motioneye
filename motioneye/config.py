@@ -1761,6 +1761,16 @@ def motion_camera_dict_to_ui(data):
             ui['web_hook_end_notifications_http_method'] = e[-2]
             ui['web_hook_end_notifications_url'] = e[-1]
 
+        elif ' mqtt ' in e:
+            e = shlex.split(e)
+
+            if len(e) < 2:
+                continue
+
+            ui['mqtt_end_notifications_enabled'] = True
+            ui['mqtt_end_notifications_exec'] = e[-1]
+
+
         elif 'relayevent' in e or 'eventrelay.py' in e:
             continue  # ignore internal relay script
 
@@ -1790,16 +1800,6 @@ def motion_camera_dict_to_ui(data):
 
         elif 'relayevent' in e:
             continue  # ignore internal relay script
-
-        elif ' mqtt ' in e:
-            e = shlex.split(e)
-
-            if len(e) < 2:
-                continue
-
-            ui['mqtt_end_notifications_enabled'] = True
-            ui['mqtt_end_notifications_exec'] = e[-1]
-
 
         else:  # custom command
             command_storage.append(e)
