@@ -18,7 +18,6 @@ RUN case "$(dpkg --print-architecture)" in \
     curl -sSfO 'https://bootstrap.pypa.io/get-pip.py' && \
     python3 get-pip.py && \
     python3 -m pip install --no-cache-dir --upgrade pip setuptools wheel && \
-    python3 -m pip install --no-cache-dir --upgrade pip paho-mqtt&& \
     python3 -m pip install --no-cache-dir /tmp/motioneye && \
     motioneye_init --skip-systemd --skip-apt-update && \
     # Change uid/gid of user/group motion to match our desired IDs. This will
