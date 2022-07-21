@@ -1208,7 +1208,18 @@
                             <td><span class="help-mark" title="{{ _("Komando por esti lanĉa kiam moviĝokazaĵo finiĝas; multnombraj komandoj povas esti apartigitaj per dupunkto; ne uzu punktokompojn per komandoj; la sekvaj specialaj tokensoj estas akceptitaj: %%Y = jaro, %%m = monato, %%d = dato, %%H = horo, %%M = minuto, %%S = sekundo, %%q = kadra nombro.") }}">?</span></td>
                         </tr>
                         <tr class="settings-item" depends="motionDetectionEnabled">
-                            <td class="settings-item-label"><span class="settings-item-label">Update a MQTT topic </span></td>
+                            <td colspan="100"><div class="settings-item-separator"></div></td>
+                        </tr>
+                        <tr class="settings-item" depends="motionDetectionEnabled">
+                            <td class="settings-item-label"><span class="settings-item-label"><strong>Actions when motion</strong></span></td>
+                            <td class="settings-item-value"><span class="settings-item-label"><strong>detected/cleared:</strong></span></td>
+                        </tr>
+                        </tr>
+                        <tr class="settings-item" depends="motionDetectionEnabled">
+                            <td colspan="100"><div class="settings-item-separator"></div></td>
+                        </tr>
+                        <tr class="settings-item" depends="motionDetectionEnabled">
+                            <td class="settings-item-label"><span class="settings-item-label">Update an MQTT topc</span></td>
                             <td class="settings-item-value"><input type="checkbox" class="styled notifications camera-config" id="MQTTNotificationsEnabledSwitch"></td>
                             <td><span class="help-mark" title="enable this if you want to publish an MQTT topic">?</span></td>
                         </tr>

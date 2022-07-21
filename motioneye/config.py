@@ -1192,11 +1192,18 @@ def motion_camera_ui_to_dict(ui, prev_config=None):
             )
         )
 
-    if ui['command_notifications_enabled']:
-        on_event_start += utils.split_semicolon(ui['command_notifications_exec'])
 
     if ui['mqtt_notifications_enabled'] and ui['mqtt_notifications_exec']:
-        on_event_start += [f"/usr/bin/mosquitto_pub -m ON -L {ui['mqtt_notifications_exec']}"]
+        on_event_start.append(
+            "{script} '{message}' '{url}'".format(
+                script=meyectl.find_command('mqtt'),
+                message="YES",
+                url=ui['mqtt_notifications_exec'],
+            )
+        )
+
+    if ui['command_notifications_enabled']:
+        on_event_start += utils.split_semicolon(ui['command_notifications_exec'])
 
     data['on_event_start'] = '; '.join(on_event_start)
 
@@ -1217,11 +1224,18 @@ def motion_camera_ui_to_dict(ui, prev_config=None):
             }
         )
 
+    if ui['mqtt_notifications_enabled'] and ui['mqtt_notifications_exec']:
+        on_event_end.append(
+            "{script} '{message}' '{url}'".format(
+                script=meyectl.find_command('mqtt'),
+                message="OFF",
+                url=ui['mqtt_notifications_exec'],
+            )
+        )
+
+
     if ui['command_end_notifications_enabled']:
         on_event_end += utils.split_semicolon(ui['command_end_notifications_exec'])
-
-    if ui['mqtt_notifications_enabled'] and ui['mqtt_notifications_exec']:
-        on_event_start += [f"/usr/bin/mosquitto_pub -m OFF -L {ui['mqtt_notifications_exec']}"]
 
 
     data['on_event_end'] = '; '.join(on_event_end)
@@ -1390,6 +1404,7 @@ def motion_camera_dict_to_ui(data):
         'web_hook_end_notifications_enabled': False,
         'command_notifications_enabled': False,
         'command_end_notifications_enabled': False,
+        'mqtt_notifications_enabled': False,
         # working schedule
         'working_schedule': False,
         'working_schedule_type': 'during',
@@ -1708,6 +1723,15 @@ def motion_camera_dict_to_ui(data):
             ui['web_hook_notifications_enabled'] = True
             ui['web_hook_notifications_http_method'] = e[-2]
             ui['web_hook_notifications_url'] = e[-1]
+
+        elif ' mqtt ' in e:
+            e = shlex.split(e)
+
+            if len(e) < 2:
+                continue
+
+            ui['mqtt_notifications_enabled'] = True
+            ui['mqtt_notifications_exec'] = e[-1]
 
         elif 'relayevent' in e:
             continue  # ignore internal relay script
