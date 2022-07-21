@@ -1732,8 +1732,8 @@ def motion_camera_dict_to_ui(data):
                 continue
 
             ui['mqtt_notifications_enabled'] = True
-            ui['mqtt_notifications_message'] = e[-2]
             ui['mqtt_notifications_url'] = e[-1]
+            ui['mqtt_notifications_message'] = e[-2]
 
         elif 'relayevent' in e:
             continue  # ignore internal relay script
@@ -1769,8 +1769,8 @@ def motion_camera_dict_to_ui(data):
                 continue
 
             ui['mqtt_end_notifications_enabled'] = True
-            ui['mqtt_end_notifications_message'] = e[-2]
             ui['mqtt_end_notifications_url'] = e[-1]
+            ui['mqtt_end_notifications_message'] = e[-2]
 
 
         elif 'relayevent' in e or 'eventrelay.py' in e:
