@@ -2447,8 +2447,8 @@ function dict2CameraUi(dict) {
 
     $('#MQTTNotificationsEnabledSwitch')[0].checked = dict['mqtt_notifications_enabled']; markHideIfNull('mqtt_notifications_enabled', 'MQTTNotificationsEnabledSwitch');
     $('#MQTTNotificationsEntry').val(dict['mqtt_notifications_exec']);
-    $('#MQTTEndNotificationsEnabledSwitch')[0].checked = dict['mqtt_end_notifications_enabled']; markHideIfNull('mqtt_notifications_enabled', 'MQTTNotificationsEnabledSwitch');
-    $('#MQTTEndNotificationsEntry').val(dict['mqtt_notifications_exec']);
+    $('#MQTTEndNotificationsEnabledSwitch')[0].checked = dict['mqtt_end_notifications_enabled']; markHideIfNull('mqtt_notifications_enabled', 'MQTTEndNotificationsEnabledSwitch');
+    $('#MQTTEndNotificationsEntry').val(dict['mqtt_end_notifications_exec']);
     $('#commandNotificationsEnabledSwitch')[0].checked = dict['command_notifications_enabled']; markHideIfNull('command_notifications_enabled', 'commandNotificationsEnabledSwitch');
     $('#commandNotificationsEntry').val(dict['command_notifications_exec']);
     $('#commandEndNotificationsEnabledSwitch')[0].checked = dict['command_end_notifications_enabled']; markHideIfNull('command_end_notifications_enabled', 'commandEndNotificationsEnabledSwitch');
