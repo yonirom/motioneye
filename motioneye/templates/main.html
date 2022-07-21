@@ -1153,6 +1153,19 @@
                             <td colspan="100"><div class="settings-item-separator"></div></td>
                         </tr>
                         <tr class="settings-item" depends="motionDetectionEnabled">
+                            <td class="settings-item-label"><span class="settings-item-label">Update an MQTT topic</span></td>
+                            <td class="settings-item-value"><input type="checkbox" class="styled notifications camera-config" id="MQTTNotificationsEnabledSwitch"></td>
+                            <td><span class="help-mark" title="enable this if you want to publish an MQTT topic">?</span></td>
+                        </tr>
+                        <tr class="settings-item" required="true" depends="MQTTNotificationsEnabled motionDetectionEnabled" strip="true">
+                            <td class="settings-item-label"><span class="settings-item-label">MQTT URI</span></td>
+                            <td class="settings-item-value"><input type="text" class="styled notifications camera-config" id="MQTTNotificationsEntry" placeholder="mqtt(s)://[username[:password]@]host[:port]/topic"></td>
+                            <td><span class="help-mark" title="MQTT Server URI to update topic">?</span></td>
+                        </tr>
+                        <tr class="settings-item" depends="motionDetectionEnabled">
+                            <td colspan="100"><div class="settings-item-separator"></div></td>
+                        </tr>
+                        <tr class="settings-item" depends="motionDetectionEnabled">
                             <td class="settings-item-label"><span class="settings-item-label">{{ _("Lanĉi komando") }}</span></td>
                             <td class="settings-item-value"><input type="checkbox" class="styled notifications camera-config" id="commandNotificationsEnabledSwitch"></td>
                             <td><span class="help-mark" title="{{ _("Ebligu ĉi tion, se vi volas lanĉi komandon ĉiufoje kiam moviĝokazaĵo estas detektita.") }}">?</span></td>
@@ -1211,21 +1224,13 @@
                             <td colspan="100"><div class="settings-item-separator"></div></td>
                         </tr>
                         <tr class="settings-item" depends="motionDetectionEnabled">
-                            <td class="settings-item-label"><span class="settings-item-label"><strong>Actions when motion</strong></span></td>
-                            <td class="settings-item-value"><span class="settings-item-label"><strong>detected/cleared:</strong></span></td>
-                        </tr>
-                        </tr>
-                        <tr class="settings-item" depends="motionDetectionEnabled">
-                            <td colspan="100"><div class="settings-item-separator"></div></td>
-                        </tr>
-                        <tr class="settings-item" depends="motionDetectionEnabled">
-                            <td class="settings-item-label"><span class="settings-item-label">Update an MQTT topc</span></td>
-                            <td class="settings-item-value"><input type="checkbox" class="styled notifications camera-config" id="MQTTNotificationsEnabledSwitch"></td>
+                            <td class="settings-item-label"><span class="settings-item-label">Update an MQTT topxc</span></td>
+                            <td class="settings-item-value"><input type="checkbox" class="styled notifications camera-config" id="MQTTEndNotificationsEnabledSwitch"></td>
                             <td><span class="help-mark" title="enable this if you want to publish an MQTT topic">?</span></td>
                         </tr>
-                        <tr class="settings-item" required="true" depends="MQTTNotificationsEnabled motionDetectionEnabled" strip="true">
+                        <tr class="settings-item" required="true" depends="MQTTEndNotificationsEnabled motionDetectionEnabled" strip="true">
                             <td class="settings-item-label"><span class="settings-item-label">MQTT URI</span></td>
-                            <td class="settings-item-value"><input type="text" class="styled notifications camera-config" id="MQTTNotificationsEntry" placeholder="mqtt(s)://[username[:password]@]host[:port]/topic"></td>
+                            <td class="settings-item-value"><input type="text" class="styled notifications camera-config" id="MQTTEndNotificationsEntry" placeholder="mqtt(s)://[username[:password]@]host[:port]/topic"></td>
                             <td><span class="help-mark" title="MQTT Server URI to update topic">?</span></td>
                         </tr>
                         <tr class="settings-item" depends="motionDetectionEnabled">

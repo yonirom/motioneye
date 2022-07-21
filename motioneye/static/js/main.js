@@ -2057,12 +2057,14 @@ function cameraUi2Dict() {
         'web_hook_end_notifications_enabled': $('#webHookEndNotificationsEnabledSwitch')[0].checked,
         'web_hook_end_notifications_url': $('#webHookEndNotificationsUrlEntry').val(),
         'web_hook_end_notifications_http_method': $('#webHookEndNotificationsHttpMethodSelect').val(),
+        'mqtt_notifications_enabled': $('#MQTTNotificationsEnabledSwitch')[0].checked,
+        'mqtt_notifications_exec': $('#MQTTNotificationsEntry').val(),
+        'mqtt_end_notifications_enabled': $('#MQTTEndNotificationsEnabledSwitch')[0].checked,
+        'mqtt_end_notifications_exec': $('#MQTTEndNotificationsEntry').val(),
         'command_notifications_enabled': $('#commandNotificationsEnabledSwitch')[0].checked,
         'command_notifications_exec': $('#commandNotificationsEntry').val(),
         'command_end_notifications_enabled': $('#commandEndNotificationsEnabledSwitch')[0].checked,
         'command_end_notifications_exec': $('#commandEndNotificationsEntry').val(),
-        'mqtt_notifications_enabled': $('#MQTTNotificationsEnabledSwitch')[0].checked,
-        'mqtt_notifications_exec': $('#MQTTNotificationsEntry').val(),
 
         /* working schedule */
         'working_schedule': $('#workingScheduleEnabledSwitch')[0].checked,
@@ -2443,12 +2445,14 @@ function dict2CameraUi(dict) {
     $('#webHookEndNotificationsUrlEntry').val(dict['web_hook_end_notifications_url']);
     $('#webHookEndNotificationsHttpMethodSelect').val(dict['web_hook_end_notifications_http_method']);
 
+    $('#MQTTNotificationsEnabledSwitch')[0].checked = dict['mqtt_notifications_enabled']; markHideIfNull('mqtt_notifications_enabled', 'MQTTNotificationsEnabledSwitch');
+    $('#MQTTNotificationsEntry').val(dict['mqtt_notifications_exec']);
+    $('#MQTTEndNotificationsEnabledSwitch')[0].checked = dict['mqtt_end_notifications_enabled']; markHideIfNull('mqtt_notifications_enabled', 'MQTTNotificationsEnabledSwitch');
+    $('#MQTTEndNotificationsEntry').val(dict['mqtt_notifications_exec']);
     $('#commandNotificationsEnabledSwitch')[0].checked = dict['command_notifications_enabled']; markHideIfNull('command_notifications_enabled', 'commandNotificationsEnabledSwitch');
     $('#commandNotificationsEntry').val(dict['command_notifications_exec']);
     $('#commandEndNotificationsEnabledSwitch')[0].checked = dict['command_end_notifications_enabled']; markHideIfNull('command_end_notifications_enabled', 'commandEndNotificationsEnabledSwitch');
     $('#commandEndNotificationsEntry').val(dict['command_end_notifications_exec']);
-    $('#MQTTNotificationsEnabledSwitch')[0].checked = dict['mqtt_notifications_enabled']; markHideIfNull('mqtt_notifications_enabled', 'MQTTNotificationsEnabledSwitch');
-    $('#MQTTNotificationsEntry').val(dict['mqtt_notifications_exec']);
 
     /* working schedule */
     $('#workingScheduleEnabledSwitch')[0].checked = dict['working_schedule']; markHideIfNull('working_schedule', 'workingScheduleEnabledSwitch');

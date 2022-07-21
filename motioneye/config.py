@@ -1224,12 +1224,12 @@ def motion_camera_ui_to_dict(ui, prev_config=None):
             }
         )
 
-    if ui['mqtt_notifications_enabled'] and ui['mqtt_notifications_exec']:
+    if ui['mqtt_end_notifications_enabled'] and ui['mqtt_end_notifications_exec']:
         on_event_end.append(
             "{script} '{message}' '{url}'".format(
                 script=meyectl.find_command('mqtt'),
                 message="OFF",
-                url=ui['mqtt_notifications_exec'],
+                url=ui['mqtt_end_notifications_exec'],
             )
         )
 
@@ -1405,6 +1405,7 @@ def motion_camera_dict_to_ui(data):
         'command_notifications_enabled': False,
         'command_end_notifications_enabled': False,
         'mqtt_notifications_enabled': False,
+        'mqtt_end_notifications_enabled': False,
         # working schedule
         'working_schedule': False,
         'working_schedule_type': 'during',
@@ -1789,6 +1790,16 @@ def motion_camera_dict_to_ui(data):
 
         elif 'relayevent' in e:
             continue  # ignore internal relay script
+
+        elif ' mqtt ' in e:
+            e = shlex.split(e)
+
+            if len(e) < 2:
+                continue
+
+            ui['mqtt_end_notifications_enabled'] = True
+            ui['mqtt_end_notifications_exec'] = e[-1]
+
 
         else:  # custom command
             command_storage.append(e)
