@@ -2058,9 +2058,11 @@ function cameraUi2Dict() {
         'web_hook_end_notifications_url': $('#webHookEndNotificationsUrlEntry').val(),
         'web_hook_end_notifications_http_method': $('#webHookEndNotificationsHttpMethodSelect').val(),
         'mqtt_notifications_enabled': $('#MQTTNotificationsEnabledSwitch')[0].checked,
-        'mqtt_notifications_exec': $('#MQTTNotificationsEntry').val(),
+        'mqtt_notifications_url': $('#MQTTNotificationsUrl').val(),
+        'mqtt_notifications_message': $('#MQTTNotificationsMessage').val(),
         'mqtt_end_notifications_enabled': $('#MQTTEndNotificationsEnabledSwitch')[0].checked,
-        'mqtt_end_notifications_exec': $('#MQTTEndNotificationsEntry').val(),
+        'mqtt_end_notifications_url': $('#MQTTEndNotificationsUrl').val(),
+        'mqtt_end_notifications_message': $('#MQTTEndNotificationsMessage').val(),
         'command_notifications_enabled': $('#commandNotificationsEnabledSwitch')[0].checked,
         'command_notifications_exec': $('#commandNotificationsEntry').val(),
         'command_end_notifications_enabled': $('#commandEndNotificationsEnabledSwitch')[0].checked,
@@ -2446,9 +2448,11 @@ function dict2CameraUi(dict) {
     $('#webHookEndNotificationsHttpMethodSelect').val(dict['web_hook_end_notifications_http_method']);
 
     $('#MQTTNotificationsEnabledSwitch')[0].checked = dict['mqtt_notifications_enabled']; markHideIfNull('mqtt_notifications_enabled', 'MQTTNotificationsEnabledSwitch');
-    $('#MQTTNotificationsEntry').val(dict['mqtt_notifications_exec']);
+    $('#MQTTNotificationsUrl').val(dict['mqtt_notifications_url']);
+    $('#MQTTNotificationsMessage').val(dict['mqtt_notifications_message']);
     $('#MQTTEndNotificationsEnabledSwitch')[0].checked = dict['mqtt_end_notifications_enabled']; markHideIfNull('mqtt_notifications_enabled', 'MQTTEndNotificationsEnabledSwitch');
-    $('#MQTTEndNotificationsEntry').val(dict['mqtt_end_notifications_exec']);
+    $('#MQTTEndNotificationsUrl').val(dict['mqtt_end_notifications_url']);
+    $('#MQTTEndNotificationsMessage').val(dict['mqtt_end_notifications_message']);
     $('#commandNotificationsEnabledSwitch')[0].checked = dict['command_notifications_enabled']; markHideIfNull('command_notifications_enabled', 'commandNotificationsEnabledSwitch');
     $('#commandNotificationsEntry').val(dict['command_notifications_exec']);
     $('#commandEndNotificationsEnabledSwitch')[0].checked = dict['command_end_notifications_enabled']; markHideIfNull('command_end_notifications_enabled', 'commandEndNotificationsEnabledSwitch');
